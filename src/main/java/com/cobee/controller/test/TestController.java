@@ -36,6 +36,7 @@ public class TestController {
     {
 
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(processKey);
+        System.out.println("=================" + processInstance.getDeploymentId());
         Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
 
 
