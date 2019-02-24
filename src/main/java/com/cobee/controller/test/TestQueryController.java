@@ -3,6 +3,7 @@ package com.cobee.controller.test;
 import org.activiti.engine.IdentityService;
 import org.activiti.engine.identity.Group;
 import org.activiti.engine.identity.GroupQuery;
+import org.activiti.engine.identity.NativeGroupQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,6 +75,46 @@ public class TestQueryController {
     {
         GroupQuery groupQuery = identityService.createGroupQuery();
         return groupQuery.count();
+    }
+
+    /**
+     * 对查询数据进行排序
+     * @return
+     */
+    @RequestMapping(value = "/groupOrderBy", method = RequestMethod.GET)
+    @ResponseBody
+    public List<Group> groupOrderBy()
+    {
+        GroupQuery groupQuery = identityService.createGroupQuery();
+        List<Group> list = groupQuery.orderByGroupName().desc().list();
+        return list;
+    }
+
+    /**
+     * 对查询数据进行排序
+     * @return
+     */
+    @RequestMapping(value = "/singleResultGroup", method = RequestMethod.GET)
+    @ResponseBody
+    public Group singleResultGroup()
+    {
+        GroupQuery groupQuery = identityService.createGroupQuery();
+        Group group = groupQuery.groupName("Group10").singleResult();
+        return group;
+    }
+
+    /**
+     * 使用原生SQL语句查询
+     * @return
+     */
+    @RequestMapping(value = "/nativeGroupQuery", method = RequestMethod.GET)
+    @ResponseBody
+    public List<Group> nativeGroupQuery(String name)
+    {
+        NativeGroupQuery nativeGroupQuery = identityService.createNativeGroupQuery();
+        nativeGroupQuery.sql("SELECT * FROM act_id_group where name_ = #{name}");
+        nativeGroupQuery.parameter("name", name);
+        return nativeGroupQuery.list();
     }
 
 }
