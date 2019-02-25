@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:activiti="http://activiti.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://www.activiti.org/test" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" expressionLanguage="http://www.w3.org/1999/XPath" id="m1551017309026" name="" targetNamespace="http://www.activiti.org/test" typeLanguage="http://www.w3.org/2001/XMLSchema">
   <process id="leave" isClosed="false" isExecutable="true" name="leave process" processType="None">
+    <dataObject id="personName" name="personName"
+        itemSubjectRef="xsd:string">
+        <extensionElements>
+            <activiti:value>Crazyit</activiti:value>
+        </extensionElements>
+    </dataObject>
     <startEvent id="startevent1" name="Start"/>
     <endEvent id="endevent1" name="End"/>
     <userTask activiti:exclusive="true" id="usertask1" name="鍐欒鍋囧唴瀹�"/>
