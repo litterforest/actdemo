@@ -1,6 +1,9 @@
 package com.cobee.controller.test;
 
+import org.activiti.engine.IdentityService;
 import org.activiti.engine.RepositoryService;
+import org.activiti.engine.identity.User;
+import org.activiti.engine.identity.UserQuery;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.repository.ProcessDefinitionQuery;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
@@ -27,6 +30,8 @@ public class TestProcessDefinitionController {
 
     @Autowired
     private RepositoryService repositoryService;
+    @Autowired
+    private IdentityService identityService;
 
     /**
      * 根据部署来中止流程定义
@@ -63,6 +68,37 @@ public class TestProcessDefinitionController {
         ProcessDefinition processDefinition = processDefinitionQuery.singleResult();
 
         repositoryService.activateProcessDefinitionById(processDefinition.getId());
+        return "success";
+    }
+
+    /**
+     * 激活流程定义，使用的时候通过查询权限表act_ru_identitylink，来查看该用户下有哪些可用流程
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/authProcess", method = RequestMethod.GET)
+    @ResponseBody
+    public String authProcess(String depId) throws Exception
+    {
+        UserQuery userQuery = identityService.createUserQuery();
+        User user = userQuery.userId("1").singleResult();
+        if (user == null)
+        {
+            // 创建activiti用户
+            user = identityService.newUser("1");
+            user.setEmail("552477192@qq.com");
+            user.setFirstName("chen");
+            user.setLastName("cobee");
+            user.setPassword("123456");
+            identityService.saveUser(user);
+        }
+
+        ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
+        processDefinitionQuery.deploymentId(depId);
+        ProcessDefinition processDefinition = processDefinitionQuery.singleResult();
+        repositoryService.addCandidateStarterUser(processDefinition.getId(), user.getId());
+
         return "success";
     }
 
