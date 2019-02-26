@@ -7,6 +7,7 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.repository.ProcessDefinitionQuery;
+import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Attachment;
 import org.activiti.engine.task.Task;
@@ -82,6 +83,7 @@ public class TestProcessInstanceController {
 
     /**
      * 测试分支执行流程变量数据范围
+     * 流程里面有多少个分支，就会有多少个子执行流，数据保存在act_ru_开头的表里，流程执行完数据会清除掉
      *
      * @return
      * @throws Exception
@@ -128,6 +130,129 @@ public class TestProcessInstanceController {
         System.out.println("TaskA " + runtimeService.getVariableLocal(task.getExecutionId(), "TaskA"));
         // 全局变量可以读取值
         System.out.println("TaskB " + runtimeService.getVariable(task.getExecutionId(), "TaskB"));
+
+        return "success ProcessInstance id:" + processInstance.getId();
+    }
+
+    /**
+     * 流程中的接收任务，receiveTask任务，需要使用runtimeService的trigger方法来完成
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/receiveTask", method = RequestMethod.GET)
+    @ResponseBody
+    public String receiveTask() throws Exception
+    {
+        DeploymentBuilder deploymentBuilder = repositoryService.createDeployment();
+        deploymentBuilder.addClasspathResource("myprocess/receiveTask.bpmn");
+        Deployment deployment = deploymentBuilder.deploy();
+
+        // 查找流程定义对象
+        ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
+        processDefinitionQuery.deploymentId(deployment.getId());
+        ProcessDefinition processDefinition = processDefinitionQuery.singleResult();
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId());
+
+        // 获取子流程，子流程是一个接收任务
+        Execution execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        runtimeService.trigger(execution.getId());
+
+        execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        return "success ProcessInstance id:" + processInstance.getId();
+    }
+
+    /**
+     * 捕获信号事件元素，当发出信号后，流程节点会继续往下走
+     * 信号可以通知多个流程实例往前走
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/catchSignalEvent", method = RequestMethod.GET)
+    @ResponseBody
+    public String catchSignalEvent() throws Exception
+    {
+        DeploymentBuilder deploymentBuilder = repositoryService.createDeployment();
+        deploymentBuilder.addClasspathResource("myprocess/signalEvent.bpmn");
+        Deployment deployment = deploymentBuilder.deploy();
+
+        // 查找流程定义对象
+        ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
+        processDefinitionQuery.deploymentId(deployment.getId());
+        ProcessDefinition processDefinition = processDefinitionQuery.singleResult();
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId());
+
+        // 获取子流程，子流程是一个接收任务
+        Execution execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        //runtimeService.trigger(execution.getId());
+        runtimeService.signalEventReceived("testSignal");
+
+        execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        // 执行用户任务
+        Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        System.out.println("当前节点任务是:" + task.getName());
+
+        taskService.complete(task.getId());
+
+        task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        System.out.println("当前节点任务是:" + (task == null ? "null" : task.getName()));
+
+        return "success ProcessInstance id:" + processInstance.getId();
+    }
+
+    /**
+     * 中间消息事件，当给一个执行流程发送特定的消息时，流程实例就会往下流转
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/messageEvent", method = RequestMethod.GET)
+    @ResponseBody
+    public String messageEvent() throws Exception
+    {
+        DeploymentBuilder deploymentBuilder = repositoryService.createDeployment();
+        deploymentBuilder.addClasspathResource("myprocess/messageEvent.bpmn");
+        Deployment deployment = deploymentBuilder.deploy();
+
+        // 查找流程定义对象
+        ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
+        processDefinitionQuery.deploymentId(deployment.getId());
+        ProcessDefinition processDefinition = processDefinitionQuery.singleResult();
+
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId());
+
+        // 获取子流程，子流程是一个接收任务，执行流程数据查询
+        Execution execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        //runtimeService.trigger(execution.getId());
+        //runtimeService.signalEventReceived("testSignal");
+        runtimeService.messageEventReceived("testMsg", execution.getId());
+
+        execution = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().singleResult();
+        System.out.println("ProcessInstance id:" + processInstance.getId() + "，当前执行流程exeId:" + execution.getId() + "，actId:" + execution.getActivityId());
+
+        // 执行用户任务
+        Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        System.out.println("当前节点任务是:" + task.getName());
+
+        taskService.complete(task.getId());
+
+        task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        System.out.println("当前节点任务是:" + (task == null ? "null" : task.getName()));
 
         return "success ProcessInstance id:" + processInstance.getId();
     }
