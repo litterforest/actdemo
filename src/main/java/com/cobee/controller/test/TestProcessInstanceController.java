@@ -124,8 +124,9 @@ public class TestProcessInstanceController {
         }
 
         Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
-
+        // 局部变量读取不了值
         System.out.println("TaskA " + runtimeService.getVariableLocal(task.getExecutionId(), "TaskA"));
+        // 全局变量可以读取值
         System.out.println("TaskB " + runtimeService.getVariable(task.getExecutionId(), "TaskB"));
 
         return "success ProcessInstance id:" + processInstance.getId();
