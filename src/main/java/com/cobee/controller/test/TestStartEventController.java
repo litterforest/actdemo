@@ -68,7 +68,7 @@ public class TestStartEventController {
     }
 
     /**
-     * 使用错误码来起动一子流程
+     * 使用错误码来起动一子流程，错误开始事件只能出现在子流程容器里面。
      *
      * @return
      * @throws Exception
