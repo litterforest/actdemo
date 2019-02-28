@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 
 /**
- * 结束事件，一般都是抛出型事件
+ * 结束事件，一般都是抛出型事件，被开始事件和边界事件捕获
  */
 @Controller
 @RequestMapping("/test/EndEvent")
