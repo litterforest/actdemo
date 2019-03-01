@@ -7,6 +7,7 @@ import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
+import org.activiti.engine.task.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class TestBaseController {
@@ -35,6 +36,18 @@ public abstract class TestBaseController {
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
         ProcessInstance processInstance = runtimeService.startProcessInstanceById(processDefinition.getId());
         return processInstance;
+    }
+
+    protected String getTaskName(Task task)
+    {
+        if (task == null)
+        {
+            return "流程结束";
+        }
+        else
+        {
+            return "当前流程节点名称：" + task.getName();
+        }
     }
 
 }
