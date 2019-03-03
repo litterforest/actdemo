@@ -2,6 +2,8 @@ package com.cobee.controller.test.task;
 
 import com.cobee.component.AuthService;
 import com.cobee.controller.test.TestBaseController;
+import com.cobee.listener.MyCreateBeanListener;
+import com.cobee.listener.MyCreateDelegateListener;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
@@ -17,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *  介绍用户任务和与之相关联的任务监听器
+ *
+ *
  * Created by Administrator on 2019/3/2.
  */
 @Controller
@@ -84,6 +89,86 @@ public class TestUserTaskController extends TestBaseController {
         Map<String, Object> maps = new HashMap<String, Object>();
         maps.put("authService", authService);
         runtimeService.startProcessInstanceById(processDefinition.getId(), maps);
+
+        return "success";
+    }
+
+    /**
+     * 为用户任务增加一个创建阶段的监听器
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/userTaskCreateListener", method = RequestMethod.GET)
+    @ResponseBody
+    public String userTaskCreateListener() throws Exception
+    {
+        super.deployBpmnAndStartProcessInstance("myprocess/usertask/userTaskListenerCreate.bpmn");
+
+        return "success";
+    }
+
+    /**
+     * 为用户任务增加一个创建阶段的监听器，使用expression方式配置监听器
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/userTaskCreateListenerExpress", method = RequestMethod.GET)
+    @ResponseBody
+    public String userTaskCreateListenerExpress() throws Exception
+    {
+        Deployment deployment = repositoryService.createDeployment().addClasspathResource("myprocess/usertask/userTaskListenerCreate.bpmn").deploy();
+
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
+        Map<String, Object> maps = new HashMap<String, Object>();
+        maps.put("myCreateBeanListener", new MyCreateBeanListener());
+        runtimeService.startProcessInstanceById(processDefinition.getId(), maps);
+
+        return "success";
+    }
+
+    /**
+     * 为用户任务增加一个创建阶段的监听器，使用delegateExpression方式配置监听器
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/userTaskCreateListenerDelegExpress", method = RequestMethod.GET)
+    @ResponseBody
+    public String userTaskCreateListenerDelegExpress() throws Exception
+    {
+        Deployment deployment = repositoryService.createDeployment().addClasspathResource("myprocess/usertask/userTaskListenerCreate.bpmn").deploy();
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
+        Map<String, Object> maps = new HashMap<String, Object>();
+        maps.put("myCreateBeanListener", new MyCreateBeanListener());
+        maps.put("myCreateDelegateListener", new MyCreateDelegateListener());
+        runtimeService.startProcessInstanceById(processDefinition.getId(), maps);
+        return "success";
+    }
+
+    /**
+     * 多种类型任务监听器，包含create, assignment, complete
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/mutipluTaskListener", method = RequestMethod.GET)
+    @ResponseBody
+    public String mutipluTaskListener() throws Exception
+    {
+        ProcessInstance processInstance = super.deployBpmnAndStartProcessInstance("myprocess/usertask/userTaskListenerCreate.bpmn");
+
+        Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+
+        // 分配任务代理人
+        taskService.claim(task.getId(), "cobee");
+
+        // 完成任务
+        taskService.complete(task.getId());
+
+        task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        System.out.println(getTaskName(task));
 
         return "success";
     }
